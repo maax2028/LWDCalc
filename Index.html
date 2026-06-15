@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⭐ Last Working Day Calculator  - Mukesh Kumar v.28 ⭐</title>
+
+<style>
+body { font-family: Trebuchet MS; background:#f4f6f9; margin:0; padding:10px; }
+.container { max-width:420px; margin:auto; background:white; padding:15px; border-radius:10px; }
+h2{text-align:center}
+input,button{width:100%;padding:10px;margin-top:10px}
+button{background:#007bff;color:white;border:none;border-radius:5px}
+.result{margin-top:10px;padding:10px;background:#eef2f7;border-radius:5px}
+.history{font-size:12px;margin-top:10px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px;text-align:center}
+.day{padding:5px;background:#e9ecef;border-radius:5px}
+.highlight{background:#28a745;color:white}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>⭐ Last Working Day Calculator  - Mukesh Kumar v.28 ⭐</h2>
+
+<label>Resignation Date</label>
+<input type="date" id="resignationDate" >
+<button onclick="setToday()">Set Today</button>
+
+<label>Notice Period (Total Days)</label>
+<input type="number" id="noticePeriod" placeholder="eg. 30/60/90">
+
+<button onclick="calculate()">Calculate</button>
+<button onclick="resetAll()">Reset</button>
+
+<div id="result" class="result"></div>
+<div id="calendar" class="calendar"></div>
+<div id="history" class="history"></div>
+</div>
+
+<script>
+const holidays=["2026-01-26","2026-08-15","2026-10-02"];
+
+function setToday(){
+ document.getElementById("resignationDate").value=new Date().toISOString().split("T")[0];
+}
+
+function isWeekend(d){ return d.getDay()===0||d.getDay()===6 }
+function isHoliday(d){ return holidays.includes(d.toISOString().split("T")[0]) }
+
+// ✅ NEW LOGIC: COUNT ALL DAYS (calendar days), then adjust if last day is holiday/weekend
+function calculate(){
+ let start=document.getElementById("resignationDate").value;
+ let days=parseInt(document.getElementById("noticePeriod").value);
+ if(!start||!days){ document.getElementById("result").innerHTML="Fill all fields"; return; }
+
+ let date=new Date(start);
+
+ // ✅ Add full calendar days
+ date.setDate(date.getDate() + days);
+
+ let adjustmentNote="";
+
+ // ✅ If final date falls on weekend/holiday → push forward
+ while(isWeekend(date) || isHoliday(date)){
+   if(isWeekend(date)) adjustmentNote += "Weekend → Extended by 1 day<br>";
+   if(isHoliday(date)) adjustmentNote += "Holiday → Extended by 1 day<br>";
+
+   date.setDate(date.getDate() + 1);
+ }
+
+ let formatted=date.toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+ document.getElementById("result").innerHTML=
+ `<strong>Last Working Day:</strong><br>${formatted}<br>${adjustmentNote}`;
+
+ saveHistory(start,days,formatted);
+ renderCalendar(date);
+}
+
+// ✅ Reset
+function resetAll(){
+ document.getElementById("resignationDate").value="";
+ document.getElementById("noticePeriod").value="";
+ document.getElementById("result").innerHTML="";
+ document.getElementById("calendar").innerHTML="";
+}
+
+// ✅ Calendar View
+function renderCalendar(finalDate){
+ let cal=document.getElementById("calendar");
+ cal.innerHTML="";
+ let d=new Date(finalDate);
+ let month=d.getMonth();
+ let year=d.getFullYear();
+
+ let first=new Date(year,month,1).getDay();
+ let days=new Date(year,month+1,0).getDate();
+
+ for(let i=0;i<first;i++) cal.innerHTML+="<div></div>";
+
+ for(let i=1;i<=days;i++){
+   let cls="day";
+   if(i===d.getDate()) cls+=" highlight";
+   cal.innerHTML+=`<div class='${cls}'>${i}</div>`;
+ }
+}
+
+// ✅ Save last 6 searches
+function saveHistory(date,days,result){
+ let data=JSON.parse(localStorage.getItem("history")||"[]");
+ data.unshift(`${date} | ${days} days → ${result}`);
+ data=data.slice(0,6);
+ localStorage.setItem("history",JSON.stringify(data));
+ showHistory();
+}
+
+function showHistory(){
+ let data=JSON.parse(localStorage.getItem("history")||"[]");
+ let div=document.getElementById("history");
+ div.innerHTML="<strong>Last Searches:</strong><br>"+data.join("<br>");
+}
+
+showHistory();
+</script>
+
+</body>
+</html>
